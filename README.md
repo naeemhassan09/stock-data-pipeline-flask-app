@@ -82,6 +82,7 @@ venv\Scripts\activate
 ```bash
 source venv/bin/activate
 ```
+
     After activation, your terminal prompt should display the name of your virtual environment (e.g., (venv)).
 
 4.	**Install Dependencies:**
