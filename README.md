@@ -52,3 +52,48 @@ This project is designed as an end-to-end demonstration of data acquisition, pre
   Evaluate a long-term holding strategy by analyzing cumulative returns over a multi-year period.
 
 
+## Project Setup
+
+Follow these steps to set up and run the project on your local machine:
+
+1. **Clone the Repository:**
+
+   Open your terminal and run the following command to clone the repository:
+
+```bash
+   git clone https://github.com/naeemhassan09/stock-data-pipeline-flask-app.git
+   cd stock-data-pipeline-flask-app
+```
+
+2.	**Create a Virtual Environment:**
+
+    It is recommended to use a virtual environment to manage dependencies. You can create one using Python’s built-in venv module.
+```bash
+python -m venv venv
+```
+
+3.	**Activate the Virtual Environment:**
+
+	•	On Windows:
+```bash
+venv\Scripts\activate
+```
+    •	On macOS and Linux:
+```bash
+source venv/bin/activate
+```
+    After activation, your terminal prompt should display the name of your virtual environment (e.g., (venv)).
+
+4.	**Install Dependencies:**
+    With the virtual environment activated, install the required packages using the requirements.txt file:
+
+```bash
+pip install -r requirements.txt
+```
+
+5.	**Run the Application Locally:**
+    Start the Flask application by running:
+
+```bash
+python app.py
+```
