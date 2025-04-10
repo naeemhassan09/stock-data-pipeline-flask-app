@@ -73,17 +73,19 @@ python -m venv venv
 ```
 
 3.	**Activate the Virtual Environment:**
+    
+    On Windows:
 
-	•	On Windows:
 ```bash
 venv\Scripts\activate
 ```
-    •	On macOS and Linux:
+On macOS and Linux:
+
 ```bash
 source venv/bin/activate
 ```
 
-    After activation, your terminal prompt should display the name of your virtual environment (e.g., (venv)).
+After activation, your terminal prompt should display the name of your virtual environment (e.g., (venv)).
 
 4.	**Install Dependencies:**
     With the virtual environment activated, install the required packages using the requirements.txt file:

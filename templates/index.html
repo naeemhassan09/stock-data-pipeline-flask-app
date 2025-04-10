@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Investment Return Calculator</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h1 class="mt-4">Investment Return Calculator</h1>
+    <form method="post" class="mt-4">
+        <div class="form-group">
+            <label for="investment">Enter Investment Amount ($):</label>
+            <input type="number" step="any" class="form-control" id="investment" name="investment" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Calculate Returns</button>
+    </form>
+    {% if results %}
+    <h2 class="mt-5">Predicted Returns (Test Period: Jan 2025 - Mar 2025)</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Asset</th>
+                <th>Cumulative Return</th>
+                <th>Predicted Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset, data in results.items() %}
+            <tr>
+                <td>{{ asset }}</td>
+                <td>{{ data.Cumulative_Return | round(4) }}</td>
+                <td>${{ data.Predicted_Value | round(2) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h2 class="mt-5">Correlation Matrix (Training Data: 2022 - 2024)</h2>
+    <div class="table-responsive">
+        {{ correlation_html | safe }}
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>

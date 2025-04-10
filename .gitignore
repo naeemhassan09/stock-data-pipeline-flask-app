@@ -7,6 +7,7 @@ env/
 venv/
 ENV/
 .env/
+.env
 
 # Jupyter Notebook checkpoints (if using Colab or Jupyter)
 .ipynb_checkpoints/
