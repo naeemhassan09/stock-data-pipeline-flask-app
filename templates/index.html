@@ -9,9 +9,10 @@
 <div class="container">
     <h1 class="mt-4">Investment Return & Portfolio Calculator</h1>
     <p>
-      This tool uses historical data to predict how much profit you could make over the test period and to build a portfolio.
-      The test period used for predictions is <strong>January 2023 – March 2023</strong>. 
-      Daily returns are computed over this period and compounded to obtain cumulative returns.
+      This tool uses historical data to predict how much profit you could make over a test period and to build a portfolio.
+      The test period is <strong>January 2023 – March 2023</strong> (based on daily compounded returns). 
+      In addition, the training data from <strong>January 2022 – December 2024</strong> is used to compute additional group-level metrics 
+      and to optimize portfolio weights.
     </p>
     <form method="post" class="mt-4">
         <div class="form-group">
@@ -23,7 +24,7 @@
     
     {% if results %}
     <h2 class="mt-5">Individual Asset Predictions</h2>
-    <p><em>Test Period: January 2023 – March 2023 (Predictions based on daily compounded returns)</em></p>
+    <p><em>Test Period: January 2023 – March 2023 (Computed using daily compounded returns)</em></p>
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -45,8 +46,9 @@
     
     <h2 class="mt-5">Equal-Weighted Portfolio Prediction</h2>
     <p>
-      For the equal-weighted portfolio, all assets with a positive cumulative return are equally weighted.
-      This means that if there are N assets, each receives an allocation of approximately {{ (100.0 / portfolio_assets|length) | round(2) if portfolio_assets|length > 0 else "N/A" }}%.
+      In this approach, all assets with a positive cumulative return are given an equal share.
+      For example, if there are N assets with positive returns, each is allocated approximately {{ (100.0 / portfolio_assets|length) | round(2) if portfolio_assets|length > 0 else "N/A" }}%.
+      The portfolio's overall cumulative return is then computed by equally averaging the daily returns of these assets.
     </p>
     {% if portfolio.Portfolio_Cumulative_Return is not none %}
       <p><strong>Portfolio Cumulative Return (%):</strong> {{ (portfolio.Portfolio_Cumulative_Return * 100) | round(2) }}%</p>
@@ -74,8 +76,9 @@
     
     <h2 class="mt-5">Optimized Portfolio Prediction</h2>
     <p>
-      In this approach, we use historical training data (January 2022 – December 2024) to compute each asset’s average daily return.
-      Assets with higher historical performance receive a higher allocation. The optimized weights are computed proportionally to each asset's average daily return, which may better capture differences in performance between stocks and benchmarks.
+      In the optimized approach, historical training data (January 2022 – December 2024) is used to calculate each asset’s average daily return.
+      Assets with higher performance receive a higher weight. The allocation is determined proportionally to these historical averages.
+      This may lead to a portfolio with better risk-adjusted returns compared to the equal-weight approach.
     </p>
     {% if optimized_portfolio.Portfolio_Cumulative_Return is not none %}
       <p><strong>Optimized Portfolio Cumulative Return (%):</strong> {{ (optimized_portfolio.Portfolio_Cumulative_Return * 100) | round(2) }}%</p>
@@ -114,8 +117,10 @@
     
     <h2 class="mt-5">Group Comparison Metrics</h2>
     <p>
-      The following metrics are computed using training data for each asset class (Stocks and Benchmarks).
-      These metrics help you compare historical performance:
+      The following metrics are computed using training data for each asset class:
+      <strong>Stocks</strong> and <strong>Benchmarks</strong>.
+      These metrics include the average daily return, volatility, and the average cumulative return,
+      offering a comparison of historical performance between the two groups.
     </p>
     {% if group_metrics %}
     <table class="table table-bordered">
@@ -170,14 +175,24 @@
       <p>No group metrics available.</p>
     {% endif %}
     
-    <h2 class="mt-5">Correlation Matrix (Training Data: 2022 - 2024)</h2>
+    <h2 class="mt-5">Combined Correlation Matrix (Training Data: 2022 - 2024)</h2>
     <p>
-      The correlation matrix is based on daily returns computed from the training data over the period January 2022 – December 2024.
-      It shows the linear relationship among the stock assets.
+      This matrix shows the linear relationship among the daily returns of both stocks and benchmark assets.
+      It helps to evaluate diversification benefits – assets with lower or negative correlations can reduce overall portfolio risk.
+    </p>
+    <div class="table-responsive">
+        {{ combined_correlation_html | safe }}
+    </div>
+    
+    <h2 class="mt-5">Correlation Matrix (Stocks Only, Training Data: 2022 - 2024)</h2>
+    <p>
+      This matrix displays the correlation among the top active stocks. High correlations indicate that stocks
+      move in tandem, which can affect diversification. Lower correlations between stocks and benchmarks offer potential hedging benefits.
     </p>
     <div class="table-responsive">
         {{ correlation_html | safe }}
     </div>
+    
     {% endif %}
 </div>
 </body>
