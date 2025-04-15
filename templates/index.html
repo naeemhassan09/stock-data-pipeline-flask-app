@@ -176,23 +176,36 @@
     {% endif %}
     
     <h2 class="mt-5">Combined Correlation Matrix (Training Data: 2022 - 2024)</h2>
-    <p>
-      This matrix shows the linear relationship among the daily returns of both stocks and benchmark assets.
-      It helps to evaluate diversification benefits – assets with lower or negative correlations can reduce overall portfolio risk.
-    </p>
-    <div class="table-responsive">
-        {{ combined_correlation_html | safe }}
-    </div>
+<p>
+  The following matrix shows the Pearson correlation coefficients between the daily returns of both stocks and benchmark assets over the training period.
+  <br>
+  - A value close to <strong>+1</strong> indicates a strong positive linear relationship (the assets tend to move in the same direction).
+  <br>
+  - A value close to <strong>-1</strong> indicates a strong negative linear relationship (the assets tend to move in opposite directions).
+  <br>
+  - A value around <strong>0</strong> suggests little or no linear relationship.
+  <br>
+  This information is useful for assessing diversification benefits: assets that are less correlated or negatively correlated may reduce overall portfolio risk.
+</p>
+<div class="table-responsive">
+    {{ combined_correlation_html | safe }}
+</div>
+
+<h2 class="mt-5">Correlation Matrix (Stocks Only, Training Data: 2022 - 2024)</h2>
+<p>
+  This matrix displays the pairwise correlation between the daily returns of the selected stocks.
+  <br>
+  - High correlation (values near +1) means the stocks tend to move together, which might reduce diversification benefits.
+  <br>
+  - Lower correlations, or negative correlations, suggest that the stocks are more independent, potentially improving risk diversification.
+  <br>
+  Use these insights to better understand how closely the stocks' performances are linked.
+</p>
+<div class="table-responsive">
+    {{ correlation_html | safe }}
+</div>
     
-    <h2 class="mt-5">Correlation Matrix (Stocks Only, Training Data: 2022 - 2024)</h2>
-    <p>
-      This matrix displays the correlation among the top active stocks. High correlations indicate that stocks
-      move in tandem, which can affect diversification. Lower correlations between stocks and benchmarks offer potential hedging benefits.
-    </p>
-    <div class="table-responsive">
-        {{ correlation_html | safe }}
-    </div>
-    
+
     {% endif %}
 </div>
 </body>
