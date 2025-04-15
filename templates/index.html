@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Investment Return Calculator</title>
+    <title>Investment Return & Portfolio Calculator</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
 </head>
 <body>
 <div class="container">
-    <h1 class="mt-4">Investment Return Calculator</h1>
+    <h1 class="mt-4">Investment Return & Portfolio Calculator</h1>
     <form method="post" class="mt-4">
         <div class="form-group">
             <label for="investment">Enter Investment Amount ($):</label>
@@ -16,7 +16,7 @@
         <button type="submit" class="btn btn-primary">Calculate Returns</button>
     </form>
     {% if results %}
-    <h2 class="mt-5">Predicted Returns (Test Period: Jan 2025 - Mar 2025)</h2>
+    <h2 class="mt-5">Predicted Returns (Test Period: Jan 2023 - Mar 2023)</h2>
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -35,6 +35,26 @@
             {% endfor %}
         </tbody>
     </table>
+    
+    <h2 class="mt-5">Balanced Portfolio Prediction</h2>
+    {% if portfolio.Portfolio_Cumulative_Return is not none %}
+      <p><strong>Portfolio Cumulative Return:</strong> {{ portfolio.Portfolio_Cumulative_Return | round(4) }}</p>
+      <p><strong>Portfolio Predicted Value:</strong> ${{ portfolio.Portfolio_Predicted_Value | round(2) }}</p>
+    {% else %}
+      <p>No positive-performing assets found to create a balanced portfolio.</p>
+    {% endif %}
+    
+    <h3 class="mt-3">Additional Portfolio Metrics</h3>
+    {% if metrics %}
+    <ul>
+        <li><strong>Average Daily Return:</strong> {{ metrics["Average Daily Return"] | round(4) }}</li>
+        <li><strong>Volatility (Std Dev):</strong> {{ metrics["Volatility"] | round(4) }}</li>
+        <li><strong>Sharpe Ratio:</strong> {% if metrics["Sharpe Ratio"] is not none %}{{ metrics["Sharpe Ratio"] | round(4) }}{% else %}N/A{% endif %}</li>
+    </ul>
+    {% else %}
+      <p>No portfolio metrics available.</p>
+    {% endif %}
+    
     <h2 class="mt-5">Correlation Matrix (Training Data: 2022 - 2024)</h2>
     <div class="table-responsive">
         {{ correlation_html | safe }}
