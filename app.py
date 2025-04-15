@@ -1,3 +1,4 @@
+import os
 import database
 from flask import Flask, render_template, request
 import stocks
@@ -319,4 +320,7 @@ def index():
 
 if __name__ == "__main__":
     test_db_connection()
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    # Only run app.run() if in a local development environment
+    # For production, Gunicorn will load the app directly
+    if not os.getenv("PORT"):  # If PORT is not set, assume local development
+        app.run(host="0.0.0.0", port=8080, debug=True)
