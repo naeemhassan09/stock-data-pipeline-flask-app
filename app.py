@@ -31,7 +31,7 @@ TEST_START = "2023-01-01"
 TEST_END = "2023-03-31"
 
 def get_training_data():
-    """Fetches or loads training data for top active stocks used for correlation matrix and optimization."""
+    """Fetches or loads training data for top active stocks used for the correlation matrix and group metrics."""
     train_data = {}
     for ticker in top_active_stocks:
         table_name = f"stock_train_{ticker}"
@@ -52,6 +52,28 @@ def get_training_data():
             train_data[ticker] = df
     return train_data
 
+def get_benchmark_training_data():
+    """Fetches or loads training data for benchmark assets for group metrics."""
+    bench_data = {}
+    for name, ticker in benchmarks.items():
+        table_name = f"asset_train_{name}"
+        df = None
+        if database.table_exists(table_name):
+            df = pd.read_sql_table(table_name, database.get_engine())
+            if df.empty:
+                df = assets.fetch_asset_data(ticker, start=TRAIN_START, end=TRAIN_END)
+                if df is not None:
+                    df = assets.process_asset_data(df)
+                    database.store_df_to_db(df, table_name=table_name)
+        else:
+            df = assets.fetch_asset_data(ticker, start=TRAIN_START, end=TRAIN_END)
+            if df is not None:
+                df = assets.process_asset_data(df)
+                database.store_df_to_db(df, table_name=table_name)
+        if df is not None:
+            bench_data[name] = df
+    return bench_data
+
 def build_correlation_html(train_data):
     """Builds an HTML table of the correlation matrix from training data."""
     returns_dict = {ticker: df['Daily_Return'] for ticker, df in train_data.items() if not df.empty}
@@ -62,10 +84,33 @@ def build_correlation_html(train_data):
     else:
         return "<p>No training data available for correlation matrix.</p>"
 
+def compute_group_metrics(data_dict):
+    """
+    Computes metrics from a dictionary of training DataFrames.
+    Returns a dictionary of per-asset metrics and a dictionary of group averages.
+    """
+    metrics = {}
+    for asset, df in data_dict.items():
+        if not df.empty:
+            metrics[asset] = {
+                "Average Daily Return": df['Daily_Return'].mean(),
+                "Volatility": df['Daily_Return'].std(),
+                "Cumulative Return": df['Cumulative_Return'].iloc[-1]
+            }
+    if metrics:
+        group_avg = {
+            "Average Daily Return": np.mean([m["Average Daily Return"] for m in metrics.values()]),
+            "Volatility": np.mean([m["Volatility"] for m in metrics.values()]),
+            "Cumulative Return": np.mean([m["Cumulative Return"] for m in metrics.values()])
+        }
+    else:
+        group_avg = {}
+    return metrics, group_avg
+
 def get_test_data(investment):
     """
     Fetches or loads test data for both stocks and benchmark assets.
-    Returns a tuple of:
+    Returns a tuple:
       - asset_results: Dictionary of individual asset predictions.
       - test_data_store: Dictionary storing the DataFrame for each asset.
     """
@@ -158,11 +203,11 @@ def calculate_portfolio_metrics(test_data_store, asset_results, investment):
 
 def calculate_optimized_portfolio(investment, train_data, asset_results):
     """
-    A basic optimization that uses training data to compute weights proportional to an asset's 
-    average daily return as a proxy for its historical performance.
+    Computes an optimized portfolio using training data to assign weights proportional to each asset's
+    average daily return. Only assets with positive cumulative returns (from test data) are considered.
     
     Returns:
-      - optimized_predicted_value: The predicted portfolio value using optimized weights.
+      - optimized_predicted_value: Predicted portfolio value using optimized weights.
       - optimized_cum_ret: The weighted average cumulative return.
       - portfolio_composition: A dictionary with each asset's allocation percentage.
     """
@@ -170,7 +215,7 @@ def calculate_optimized_portfolio(investment, train_data, asset_results):
     total_avg_return = 0.0
     positive_assets = [asset for asset, data in asset_results.items() if data["Cumulative_Return"] > 0]
     
-    # Use training data to compute average daily return for each asset
+    # Calculate average daily return for each asset from the training data as a performance proxy.
     for asset in positive_assets:
         if asset in train_data and not train_data[asset].empty:
             avg_return = train_data[asset]['Daily_Return'].mean()
@@ -181,7 +226,7 @@ def calculate_optimized_portfolio(investment, train_data, asset_results):
     portfolio_composition = {}
     if total_avg_return > 0:
         for asset, ret in weights.items():
-            portfolio_composition[asset] = round(ret / total_avg_return * 100, 2)  # allocation in %
+            portfolio_composition[asset] = round(ret / total_avg_return * 100, 2)  # allocation percentage
     
     optimized_predicted_value = 0.0
     for asset, alloc_percent in portfolio_composition.items():
@@ -190,7 +235,7 @@ def calculate_optimized_portfolio(investment, train_data, asset_results):
             optimized_predicted_value += investment * weight * (1 + asset_results[asset]['Cumulative_Return'])
     
     optimized_cum_ret = sum((alloc_percent / 100.0) * asset_results[asset]['Cumulative_Return']
-                              for asset, alloc_percent in portfolio_composition.items())
+                            for asset, alloc_percent in portfolio_composition.items())
     
     return optimized_predicted_value, optimized_cum_ret, portfolio_composition
 
@@ -203,7 +248,18 @@ def index():
     portfolio_assets = []
     portfolio_composition = {}
     optimized_portfolio = {}
-    optimized_metrics = {}
+    optimized_composition = {}
+    group_metrics = {}
+    
+    # Group-level metrics (comparing stocks and benchmarks from training data)
+    stocks_train_data = get_training_data()
+    benchmarks_train_data = get_benchmark_training_data()
+    _, stocks_group_avg = compute_group_metrics(stocks_train_data)
+    _, benchmarks_group_avg = compute_group_metrics(benchmarks_train_data)
+    group_metrics = {
+        "Stocks": stocks_group_avg,
+        "Benchmarks": benchmarks_group_avg
+    }
     
     if request.method == "POST":
         try:
@@ -211,7 +267,7 @@ def index():
         except ValueError:
             investment = 0
         
-        # --- TRAINING DATA for Correlation Matrix and Optimization ---
+        # --- TRAINING DATA for Correlation Matrix ---
         train_data = get_training_data()
         correlation_html = build_correlation_html(train_data)
         
@@ -221,8 +277,6 @@ def index():
         
         # --- Equal-Weighted Portfolio Calculation & Additional Metrics ---
         portfolio_result, portfolio_metrics, portfolio_assets = calculate_portfolio_metrics(test_data_store, asset_results, investment)
-        
-        # Equal allocation composition (if any assets qualify)
         if portfolio_assets:
             portfolio_composition = {asset: round(100.0 / len(portfolio_assets), 2) for asset in portfolio_assets}
         
@@ -236,7 +290,8 @@ def index():
     return render_template("index.html", results=results, correlation_html=correlation_html,
                            portfolio=portfolio_result, metrics=portfolio_metrics,
                            portfolio_assets=portfolio_assets, portfolio_composition=portfolio_composition,
-                           optimized_portfolio=optimized_portfolio, optimized_composition=optimized_composition)
+                           optimized_portfolio=optimized_portfolio, optimized_composition=optimized_composition,
+                           group_metrics=group_metrics)
 
 if __name__ == "__main__":
     test_db_connection()

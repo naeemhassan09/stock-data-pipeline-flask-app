@@ -8,10 +8,11 @@
 <body>
 <div class="container">
     <h1 class="mt-4">Investment Return & Portfolio Calculator</h1>
-    <p>This tool uses historical data to predict how much profit you could make over a specified test period. 
-    Individual asset returns, as well as two portfolio allocation approaches, are computed based on the test period <strong>January 2023 – March 2023</strong>.
-    All daily return values are aggregated and compounded over the test period.</p>
-    
+    <p>
+      This tool uses historical data to predict how much profit you could make over the test period and to build a portfolio.
+      The test period used for predictions is <strong>January 2023 – March 2023</strong>. 
+      Daily returns are computed over this period and compounded to obtain cumulative returns.
+    </p>
     <form method="post" class="mt-4">
         <div class="form-group">
             <label for="investment">Enter Investment Amount ($):</label>
@@ -22,7 +23,7 @@
     
     {% if results %}
     <h2 class="mt-5">Individual Asset Predictions</h2>
-    <p><em>Test Period: January 2023 – March 2023</em></p>
+    <p><em>Test Period: January 2023 – March 2023 (Predictions based on daily compounded returns)</em></p>
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -44,8 +45,8 @@
     
     <h2 class="mt-5">Equal-Weighted Portfolio Prediction</h2>
     <p>
-        For the equal-weighted portfolio, all assets with a positive cumulative return over the test period are equally weighted.
-        Each asset receives an allocation of 100% divided by the number of assets included.
+      For the equal-weighted portfolio, all assets with a positive cumulative return are equally weighted.
+      This means that if there are N assets, each receives an allocation of approximately {{ (100.0 / portfolio_assets|length) | round(2) if portfolio_assets|length > 0 else "N/A" }}%.
     </p>
     {% if portfolio.Portfolio_Cumulative_Return is not none %}
       <p><strong>Portfolio Cumulative Return (%):</strong> {{ (portfolio.Portfolio_Cumulative_Return * 100) | round(2) }}%</p>
@@ -73,9 +74,8 @@
     
     <h2 class="mt-5">Optimized Portfolio Prediction</h2>
     <p>
-        In the optimized approach, we use the historical training data to compute each asset’s average daily return.
-        Assets with higher historical average daily returns receive a greater allocation.
-        The optimized allocation weights are computed proportionally to each asset's average daily return (only considering those with a positive cumulative return in the test period).
+      In this approach, we use historical training data (January 2022 – December 2024) to compute each asset’s average daily return.
+      Assets with higher historical performance receive a higher allocation. The optimized weights are computed proportionally to each asset's average daily return, which may better capture differences in performance between stocks and benchmarks.
     </p>
     {% if optimized_portfolio.Portfolio_Cumulative_Return is not none %}
       <p><strong>Optimized Portfolio Cumulative Return (%):</strong> {{ (optimized_portfolio.Portfolio_Cumulative_Return * 100) | round(2) }}%</p>
@@ -101,7 +101,7 @@
       <p>No optimized portfolio available.</p>
     {% endif %}
     
-    <h3 class="mt-5">Additional Portfolio Metrics (Equal-Weighted)</h3>
+    <h2 class="mt-5">Additional Portfolio Metrics (Equal-Weighted)</h2>
     {% if metrics %}
     <ul>
         <li><strong>Average Daily Return (%):</strong> {{ (metrics["Average Daily Return"] * 100) | round(2) }}%</li>
@@ -109,11 +109,72 @@
         <li><strong>Sharpe Ratio:</strong> {% if metrics["Sharpe Ratio"] is not none %}{{ metrics["Sharpe Ratio"] | round(4) }}{% else %}N/A{% endif %}</li>
     </ul>
     {% else %}
-      <p>No portfolio metrics available.</p>
+      <p>No additional portfolio metrics available.</p>
+    {% endif %}
+    
+    <h2 class="mt-5">Group Comparison Metrics</h2>
+    <p>
+      The following metrics are computed using training data for each asset class (Stocks and Benchmarks).
+      These metrics help you compare historical performance:
+    </p>
+    {% if group_metrics %}
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Asset Class</th>
+          <th>Average Daily Return (%)</th>
+          <th>Volatility (Std Dev %)</th>
+          <th>Average Cumulative Return (%)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Stocks</td>
+          <td>
+            {% if group_metrics.Stocks and group_metrics.Stocks["Average Daily Return"] is defined %}
+            {{ (group_metrics.Stocks["Average Daily Return"] * 100) | round(2) }}%
+            {% else %}N/A{% endif %}
+          </td>
+          <td>
+            {% if group_metrics.Stocks and group_metrics.Stocks["Volatility"] is defined %}
+            {{ (group_metrics.Stocks["Volatility"] * 100) | round(2) }}%
+            {% else %}N/A{% endif %}
+          </td>
+          <td>
+            {% if group_metrics.Stocks and group_metrics.Stocks["Cumulative Return"] is defined %}
+            {{ (group_metrics.Stocks["Cumulative Return"] * 100) | round(2) }}%
+            {% else %}N/A{% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td>Benchmarks</td>
+          <td>
+            {% if group_metrics.Benchmarks and group_metrics.Benchmarks["Average Daily Return"] is defined %}
+            {{ (group_metrics.Benchmarks["Average Daily Return"] * 100) | round(2) }}%
+            {% else %}N/A{% endif %}
+          </td>
+          <td>
+            {% if group_metrics.Benchmarks and group_metrics.Benchmarks["Volatility"] is defined %}
+            {{ (group_metrics.Benchmarks["Volatility"] * 100) | round(2) }}%
+            {% else %}N/A{% endif %}
+          </td>
+          <td>
+            {% if group_metrics.Benchmarks and group_metrics.Benchmarks["Cumulative Return"] is defined %}
+            {{ (group_metrics.Benchmarks["Cumulative Return"] * 100) | round(2) }}%
+            {% else %}N/A{% endif %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    {% else %}
+      <p>No group metrics available.</p>
     {% endif %}
     
     <h2 class="mt-5">Correlation Matrix (Training Data: 2022 - 2024)</h2>
-    <p>The correlation matrix is based on daily returns computed from the training data over the period January 2022 – December 2024.</p>
+    <p>
+      The correlation matrix is based on daily returns computed from the training data over the period January 2022 – December 2024.
+      It shows the linear relationship among the stock assets.
+    </p>
     <div class="table-responsive">
         {{ correlation_html | safe }}
     </div>
