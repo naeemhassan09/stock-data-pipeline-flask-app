@@ -24,14 +24,14 @@ def test_db_connection():
 top_active_stocks = ['AAPL', 'TSLA', 'AMZN', 'GOOGL', 'MSFT', 'NVDA', 'META', 'NFLX', 'AMD', 'BRK-B']
 benchmarks = {'S&P 500': 'SPY', 'Gold': 'GLD', 'Silver': 'SLV', 'Oil': 'USO'}
 
-# Date ranges
+# Date ranges for training and test data
 TRAIN_START = "2022-01-01"
 TRAIN_END = "2024-12-31"
 TEST_START = "2023-01-01"
 TEST_END = "2023-03-31"
 
 def get_training_data():
-    """Fetches or loads training data for top active stocks used for correlation matrix."""
+    """Fetches or loads training data for top active stocks used for correlation matrix and optimization."""
     train_data = {}
     for ticker in top_active_stocks:
         table_name = f"stock_train_{ticker}"
@@ -63,7 +63,12 @@ def build_correlation_html(train_data):
         return "<p>No training data available for correlation matrix.</p>"
 
 def get_test_data(investment):
-    """Fetches or loads test data and returns asset predictions and a store for portfolio metrics."""
+    """
+    Fetches or loads test data for both stocks and benchmark assets.
+    Returns a tuple of:
+      - asset_results: Dictionary of individual asset predictions.
+      - test_data_store: Dictionary storing the DataFrame for each asset.
+    """
     asset_results = {}
     test_data_store = {}
     
@@ -115,13 +120,16 @@ def get_test_data(investment):
 
 def calculate_portfolio_metrics(test_data_store, asset_results, investment):
     """
-    Calculates balanced portfolio predictions and additional metrics (average daily return,
-    volatility, and Sharpe ratio) using equal weighting for assets with positive returns.
+    Calculates a balanced portfolio using equal weighting for assets with positive cumulative returns.
+    Returns:
+      - portfolio_result: Dictionary with portfolio cumulative return and predicted value.
+      - portfolio_metrics: Dictionary with average daily return, volatility, and Sharpe ratio.
+      - portfolio_assets: List of asset names included.
     """
     portfolio_result = {}
     portfolio_metrics = {}
-    # Consider only assets with a positive cumulative return.
     positive_assets = {asset: data for asset, data in asset_results.items() if data["Cumulative_Return"] > 0}
+    portfolio_assets = list(positive_assets.keys())
     
     if positive_assets:
         portfolio_dfs = []
@@ -146,7 +154,45 @@ def calculate_portfolio_metrics(test_data_store, asset_results, investment):
                 "Volatility": portfolio_volatility,
                 "Sharpe Ratio": sharpe_ratio
             }
-    return portfolio_result, portfolio_metrics
+    return portfolio_result, portfolio_metrics, portfolio_assets
+
+def calculate_optimized_portfolio(investment, train_data, asset_results):
+    """
+    A basic optimization that uses training data to compute weights proportional to an asset's 
+    average daily return as a proxy for its historical performance.
+    
+    Returns:
+      - optimized_predicted_value: The predicted portfolio value using optimized weights.
+      - optimized_cum_ret: The weighted average cumulative return.
+      - portfolio_composition: A dictionary with each asset's allocation percentage.
+    """
+    weights = {}
+    total_avg_return = 0.0
+    positive_assets = [asset for asset, data in asset_results.items() if data["Cumulative_Return"] > 0]
+    
+    # Use training data to compute average daily return for each asset
+    for asset in positive_assets:
+        if asset in train_data and not train_data[asset].empty:
+            avg_return = train_data[asset]['Daily_Return'].mean()
+            if avg_return > 0:
+                weights[asset] = avg_return
+                total_avg_return += avg_return
+    
+    portfolio_composition = {}
+    if total_avg_return > 0:
+        for asset, ret in weights.items():
+            portfolio_composition[asset] = round(ret / total_avg_return * 100, 2)  # allocation in %
+    
+    optimized_predicted_value = 0.0
+    for asset, alloc_percent in portfolio_composition.items():
+        weight = alloc_percent / 100.0
+        if asset in asset_results:
+            optimized_predicted_value += investment * weight * (1 + asset_results[asset]['Cumulative_Return'])
+    
+    optimized_cum_ret = sum((alloc_percent / 100.0) * asset_results[asset]['Cumulative_Return']
+                              for asset, alloc_percent in portfolio_composition.items())
+    
+    return optimized_predicted_value, optimized_cum_ret, portfolio_composition
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -154,6 +200,10 @@ def index():
     correlation_html = ""
     portfolio_result = {}
     portfolio_metrics = {}
+    portfolio_assets = []
+    portfolio_composition = {}
+    optimized_portfolio = {}
+    optimized_metrics = {}
     
     if request.method == "POST":
         try:
@@ -161,7 +211,7 @@ def index():
         except ValueError:
             investment = 0
         
-        # --- TRAINING DATA for Correlation Matrix ---
+        # --- TRAINING DATA for Correlation Matrix and Optimization ---
         train_data = get_training_data()
         correlation_html = build_correlation_html(train_data)
         
@@ -169,11 +219,24 @@ def index():
         asset_results, test_data_store = get_test_data(investment)
         results = asset_results
         
-        # --- Balanced Portfolio Calculation & Additional Metrics ---
-        portfolio_result, portfolio_metrics = calculate_portfolio_metrics(test_data_store, asset_results, investment)
+        # --- Equal-Weighted Portfolio Calculation & Additional Metrics ---
+        portfolio_result, portfolio_metrics, portfolio_assets = calculate_portfolio_metrics(test_data_store, asset_results, investment)
         
+        # Equal allocation composition (if any assets qualify)
+        if portfolio_assets:
+            portfolio_composition = {asset: round(100.0 / len(portfolio_assets), 2) for asset in portfolio_assets}
+        
+        # --- Optimized Portfolio Based on Training Data ---
+        optimized_predicted_value, optimized_cum_ret, optimized_composition = calculate_optimized_portfolio(investment, train_data, asset_results)
+        optimized_portfolio = {
+            "Portfolio_Cumulative_Return": optimized_cum_ret,
+            "Portfolio_Predicted_Value": optimized_predicted_value
+        }
+    
     return render_template("index.html", results=results, correlation_html=correlation_html,
-                           portfolio=portfolio_result, metrics=portfolio_metrics)
+                           portfolio=portfolio_result, metrics=portfolio_metrics,
+                           portfolio_assets=portfolio_assets, portfolio_composition=portfolio_composition,
+                           optimized_portfolio=optimized_portfolio, optimized_composition=optimized_composition)
 
 if __name__ == "__main__":
     test_db_connection()
