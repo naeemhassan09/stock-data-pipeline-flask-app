@@ -11,7 +11,7 @@ def fetch_stock_data(ticker, start=None, end=None, period='3y', interval='1d'):
         stock = yf.Ticker(ticker)
         if start and end:
             print(f"Fetching data for {ticker} from {start} to {end} with interval {interval}")
-            print(stock.history(start=start, end=end, interval=interval))
+            print(stock.history(period=period, interval=interval))
             df = stock.history(start=start, end=end, interval=interval)
         else:
             df = stock.history(period=period, interval=interval)
