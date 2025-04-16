@@ -10,6 +10,7 @@ def fetch_stock_data(ticker, start=None, end=None, period='3y', interval='1d'):
         logging.info(f"Fetching data for {ticker} with start={start}, end={end}, period={period}, interval={interval}")
         stock = yf.Ticker(ticker)
         if start and end:
+            print(f"Fetching data for {ticker} from {start} to {end} with interval {interval}")
             print(stock.history(start=start, end=end, interval=interval))
             df = stock.history(start=start, end=end, interval=interval)
         else:

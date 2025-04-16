@@ -159,6 +159,7 @@ def get_test_data(investment):
                 df = stocks.process_stock_data(df)
                 database.store_df_to_db(df, table_name=table_name)
         if df is not None and not df.empty:
+
             cum_ret = df['Cumulative_Return'].iloc[-1]
             predicted_value = investment * (1 + cum_ret)
             asset_results[ticker] = {"Cumulative_Return": cum_ret, "Predicted_Value": predicted_value}
@@ -292,6 +293,7 @@ def index():
     
     # Retrieve group-level training data for Stocks and Benchmarks
     stocks_train_data = get_training_data()
+    print("Stocks training data:", stocks_train_data)
     benches_train_data = get_benchmark_training_data()
     _, stocks_group_avg = compute_group_metrics(stocks_train_data)
     _, benches_group_avg = compute_group_metrics(benches_train_data)

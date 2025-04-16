@@ -6,7 +6,7 @@ def get_engine():
     user = os.getenv("DB_USER", "your_username")
     password = os.getenv("DB_PASSWORD", "your_password")
     host = os.getenv("DB_HOST", "localhost")
-    port = os.getenv("DB_PORT", "5432")
+    port = os.getenv("DB_PORT", "522432")
     dbname = os.getenv("DB_NAME", "financial_data")
     
     connection_string = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}"
