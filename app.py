@@ -16,6 +16,12 @@ def test_db_connection():
     try:
         conn = engine.connect()
         print("Successfully connected to PostgreSQL database.")
+        print("Database connection details:")
+        print(f"User: {os.getenv('DB_USER')}")
+        print(f"Host: {os.getenv('DB_HOST')}")
+        print(f"Port: {os.getenv('DB_PORT')}")
+        print(f"Database: {os.getenv('DB_NAME')}")
+        print(conn)
         conn.close()
     except Exception as e:
         print("Error connecting to PostgreSQL database:", e)
