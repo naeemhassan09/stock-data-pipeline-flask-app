@@ -38,14 +38,18 @@ def get_training_data():
     for ticker in top_active_stocks:
         table_name = f"stock_train_{ticker}"
         df = None
+        print("checking table name", table_name)
         if database.table_exists(table_name):
+            print("table exists")
             df = pd.read_sql_table(table_name, database.get_engine())
             if df.empty:
+                print("coming here")
                 df = stocks.fetch_stock_data(ticker, start=TRAIN_START, end=TRAIN_END)
                 if df is not None:
                     df = stocks.process_stock_data(df)
                     database.store_df_to_db(df, table_name=table_name)
         else:
+            print("coming here 2")
             df = stocks.fetch_stock_data(ticker, start=TRAIN_START, end=TRAIN_END)
             if df is not None:
                 df = stocks.process_stock_data(df)
@@ -280,6 +284,7 @@ def testtimeout():
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    print("Hello World!!!!")
     results = {}
     correlation_html = ""
     combined_correlation_html = ""
@@ -293,7 +298,7 @@ def index():
     
     # Retrieve group-level training data for Stocks and Benchmarks
     stocks_train_data = get_training_data()
-    print("Stocks training data:", stocks_train_data)
+    #print("Stocks training data:", stocks_train_data)
     benches_train_data = get_benchmark_training_data()
     _, stocks_group_avg = compute_group_metrics(stocks_train_data)
     _, benches_group_avg = compute_group_metrics(benches_train_data)
