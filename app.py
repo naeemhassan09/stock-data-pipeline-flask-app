@@ -1,6 +1,7 @@
 import os
+import time
 import database
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import stocks
 import assets
 import pandas as pd
@@ -260,6 +261,19 @@ def calculate_optimized_portfolio(investment, train_data, asset_results):
                             for asset, alloc_percent in portfolio_composition.items())
     
     return optimized_predicted_value, optimized_cum_ret, portfolio_composition
+
+@app.route("/health")
+def health():
+    # Simple health check endpoint to verify that the service is running.
+    return jsonify({"status": "OK"}), 200
+
+@app.route("/testtimeout")
+def testtimeout():
+    # This endpoint simulates a long-running request.
+    # It simply waits for 310 seconds, which is longer than the configured Gunicorn timeout,
+    # to test how Cloud Run handles timeout issues.
+    time.sleep(310)
+    return jsonify({"status": "Completed after delay"}), 200
 
 @app.route("/", methods=["GET", "POST"])
 def index():
