@@ -119,6 +119,8 @@ def compute_group_metrics(data_dict):
                 "Average Daily Return": df['Daily_Return'].mean(),
                 "Volatility": df['Daily_Return'].std(),
                 "Cumulative Return": df['Cumulative_Return'].iloc[-1]
+                #The .iloc indexer is used for integer-location based indexing. By specifying -1 as the index, 
+                # it retrieves the last element from the Series.
             }
     if metrics:
         group_avg = {
