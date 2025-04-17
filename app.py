@@ -7,6 +7,7 @@ import assets
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
+import yfinance as yf
 
 load_dotenv()
 app = Flask(__name__)
