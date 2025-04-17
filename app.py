@@ -280,6 +280,12 @@ def health():
     # Simple health check endpoint to verify that the service is running.
     return jsonify({"status": "OK"}), 200
 
+@app.route("/debug/aapl")
+def debug_aapl():
+    import stocks
+    df = stocks.fetch_stock_data("AAPL", start="2022-01-01", end="2024-12-31")
+    return {"rows": len(df)}, 200
+
 @app.route("/testtimeout")
 def testtimeout():
     # This endpoint simulates a long-running request.
