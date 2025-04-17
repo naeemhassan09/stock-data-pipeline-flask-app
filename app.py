@@ -282,9 +282,20 @@ def health():
 
 @app.route("/debug/aapl")
 def debug_aapl():
-    import stocks
-    df = stocks.fetch_stock_data("AAPL", start="2022-01-01", end="2024-12-31")
-    return {"rows": len(df)}, 200
+    # try the two different fetch styles
+    df1 = yf.Ticker("AAPL").history(start="2022-01-01", end="2024-12-31", interval="1d")
+    df2 = yf.download(
+        tickers="AAPL",
+        start="2022-01-01",
+        end="2024-12-31",
+        interval="1d",
+        progress=False,
+        threads=False
+    )
+    return {
+        "history_rows": len(df1),
+        "download_rows": len(df2)
+    }
 
 @app.route("/testtimeout")
 def testtimeout():
